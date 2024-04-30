@@ -24,14 +24,14 @@ with open('BooksCleaned_editing.csv',  'r', encoding='utf-8') as csv_file:
         try:
             data_to_insert = {
                 'ISBN': row[0],
-                'Title': row[1],
-                'Author': row[2],
-                'Year-Of-Publication': int(row[3]),  # Convert to integer if needed
+                'Book-Title': row[1],
+                'Book-Author': row[2],
+                'Year-Of-Publisher': int(row[3]),  # Convert to integer if needed
                 'Publisher': row[4],
                 'Genre': row[5],
                 'Description': row[6],
-                'Average_rating': float(row[7]),  # Convert to float if needed
-                'Ratings_count': int(row[8]),  # Convert to integer if needed
+                'Average-rating': float(row[7]),  # Convert to float if needed
+                'Ratings-count': int(row[8]),  # Convert to integer if needed
                 'Image-URL-S': row[9],
                 'Image-URL-M': row[10],
                 'Image-URL-L': row[11]
