@@ -19,11 +19,12 @@ cors = CORS(app, resources={
     r"/register": {"origins": "http://localhost:3000", "methods": ["POST"]},
     r"/login": {"origins": "http://localhost:3000", "methods": ["POST"]},
     r"/regions": {"origins": "http://localhost:3000", "methods": ["GET"]},
-    r"/account/*": {"origins": "http://localhost:3000", "methods": ["POST"]},
+    r"/account/*": {"origins": "http://localhost:3000", "methods": ["GET"]},
     r"/shelves/*": {"origins": "http://localhost:3000", "methods":["GET"]},
     r"/search/*": {"origins": "http://localhost:3000", "methods": ["GET"]},
     r"/book/*": {"origins": "http://localhost:3000", "methods": ["GET"]},
-    r"/addBook": {"origins": "http://localhost:3000", "methods": ["POST"]}
+    r"/addBook": {"origins": "http://localhost:3000", "methods": ["POST"]},
+    r"/otheraccount/*": {"origins": "http://localhost:3000", "methods": ["GET"]}
 })
 
 app.register_blueprint(api_blueprint)

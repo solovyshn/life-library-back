@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, DECIMAL, Date, ForeignKey, Integer, LargeBinary, String, TEXT, Table, func, desc
+from sqlalchemy import Boolean, Column, DECIMAL, Date, ForeignKey, Integer, LargeBinary, String, TEXT, func, cast
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
 
@@ -159,20 +159,27 @@ class User(db.Model):
                 Book.Book_Author,
                 Book.Genre,
                 Book.Image_URL_M,
-                t_OwnedBooks.c.update_date
+                t_OwnedBooks.c.update_date,
+                t_OwnedBooks.c.secondUserID,
+                User.name.label('second_user_name')
             ).join(
                 t_OwnedBooks, t_OwnedBooks.c.ISBN == Book.ISBN
+            ).outerjoin(
+                User, User.user_id == t_OwnedBooks.c.secondUserID
             ).filter(
                 t_OwnedBooks.c.userID == user_id,
                 t_OwnedBooks.c.status_id == shelf.shelf_id
             ).all()
+
             books_data = [{
                 'ISBN': book.ISBN,
                 'title': book.Book_Title,
                 'author': book.Book_Author,
                 'genre': book.Genre,
                 'image_url': book.Image_URL_M,
-                'update_date': book.update_date.strftime('%d %B, %Y') if book.update_date else None
+                'update_date': book.update_date.strftime('%d %B, %Y') if book.update_date else None,
+                'second_user_name': book.second_user_name if book.secondUserID else None,
+                'second_user_id': book.secondUserID if book.secondUserID else None
             } for book in books_in_shelf]
 
             shelves_with_books.append({
@@ -180,6 +187,7 @@ class User(db.Model):
                 'shelf_name': shelf.shelf_name,
                 'books': books_data
             })
+
         return shelves_with_books
     def bookOwners(crs, books, userID):
         user = User.query.filter_by(user_id=userID).first()
@@ -213,7 +221,6 @@ class User(db.Model):
             'shelf_id': shelf.shelf_id,
             'shelf_name': shelf.shelf_name
         } for shelf in user_shelves]        
-        print(shelves_data)
         book_info = db.session.query(
             Book.ISBN,
             Book.Book_Title,
@@ -222,9 +229,10 @@ class User(db.Model):
             Book.Image_URL_L,
             Book.Year_Of_Publisher,
             Book.Publisher,
-            Book.Description
+            Book.Description,
+            Book.Average_rating,
+            Book.Ratings_count
         ).filter(Book.ISBN == isbn).first()
-        print(book_info)
 
         if book_info:
             book_details = {
@@ -235,22 +243,42 @@ class User(db.Model):
                 'image_url': book_info.Image_URL_L,
                 'year': book_info.Year_Of_Publisher,
                 'publisher': book_info.Publisher,
-                'description': book_info.Description
+                'description': book_info.Description,
+                'average_rating': book_info.Average_rating,
+                'ratings_count': book_info.Ratings_count
             }
-            book_shelf = db.session.query(
+            book_shelves = db.session.query(
                 Shelf.shelf_name
             ).join(
                 t_OwnedBooks, Shelf.shelf_id == t_OwnedBooks.c.status_id
             ).filter(
                 t_OwnedBooks.c.userID == user_id,
                 t_OwnedBooks.c.ISBN == isbn
-            ).first()
+            ).all()
 
-            book_details['shelf_name'] = book_shelf.shelf_name if book_shelf else None
+            book_details['shelf_names'] = [book_shelf.shelf_name for book_shelf in book_shelves]
+            
+            reviews_data = db.session.query(
+                t_OwnedBooks.c.review,
+                t_OwnedBooks.c.update_date,
+                User.name
+            ).join(
+                User, t_OwnedBooks.c.userID == User.user_id
+            ).filter(
+                t_OwnedBooks.c.ISBN == isbn,
+                func.length(cast(t_OwnedBooks.c.review, String)) > 0
+            ).all()
+
+            reviews = [{
+                'review': review.review,
+                'username': review.name,
+                'date': review.update_date.strftime("%d %B, %Y")
+            } for review in reviews_data]
+
+            book_details['reviews'] = reviews
 
         else:
             book_details = None
-        print(book_details)
         return {
             'shelves': shelves_data,
             'book_details': book_details
